@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+# simple broker for webbot
+
+from twisted.internet import reactor
+from twisted.python import log
+from twisted.python.logfile import DailyLogFile
+from txzmq import ZmqEndpoint, ZmqFactory, ZmqPullConnection
+import logging
+import math
+import pymongo
+import redis
+import sys
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
+class Storage(object):
+
+    def __init__(self, mongo_uri, redis_uri):
+
+        log.msg('connect: %s'%mongo_uri)
+        log.msg('connect: %s'%redis_uri)
+
+        parsed = pymongo.uri_parser.parse_uri(mongo_uri)
+        host, port = parsed['nodelist'][0]
+        db, tbl = parsed['database'], parsed['collection']
+        self.mdb = pymongo.MongoClient(host, port)[db][tbl]
+        self.rdb = redis.StrictRedis.from_url(redis_uri)
+
+    def save(self, item):
+
+        try:
+            pid = item['id']
+            old = self.rdb.zscore('jd:all', pid) or 0
+            new = item['comments']
+
+            self.rdb.zadd('jd:all', new, pid)
+            self.mdb.update({'id':pid}, item, upsert=True)
+
+            if math.fabs(new-old)>0.01:
+                log.msg('PUSH %s: %d => %d'%(pid, old, new), logLevel=logging.DEBUG)
+                self.rdb.rpush('jd:pending', pid)
+            else:
+                log.msg('PASS %s: %d == %d'%(pid, old, new), logLevel=logging.DEBUG)
+        except:
+            pass
+
+class Broker(object):
+
+    def __init__(self, zmq_uri, mongo_uri, redis_uri):
+
+        log.msg('bind: %s'%zmq_uri)
+
+        ze = ZmqEndpoint('bind', zmq_uri)
+        zf = ZmqFactory()
+        zf.registerForShutdown()
+        self.cnn = ZmqPullConnection(zf, ze)
+        self.cnn.onPull = self.process
+        self.store = Storage(mongo_uri, redis_uri)
+
+    def process(self, msg):
+
+        try:
+            buf = msg[0]
+            item = pickle.loads(buf)
+            self.store.save(item)
+        except:
+            log.err()
+
+    def run(self):
+
+        reactor.run()
+
+if __name__=='__main__':
+
+    log.startLogging(DailyLogFile.fromFullPath("/tmp/broker.log"))
+
+    Broker(
+        'tcp://*:4444',
+        'mongodb://localhost:27017/jd.index',
+        'redis://localhost:6379/10'
+    ).run()
+
