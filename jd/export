@@ -6,10 +6,14 @@ ago=$(date -d '1 day ago' +%F)
 start=$(date -d $ago +%s000)
 end=$(date -d $now +%s000)
 out=jd-review-$ago.json
+query="{date:{\$gte:new Date($start),\$lt:new Date($end)}}"
 
-echo "[$(date +%FT%T)] begin"
+echo "[$(date +%FT%T)] ====== begin ======"
 
-mongoexport -d jd -c review -q "{date:{\$gte:new Date($start),\$lt:new Date($end)}}" |
-    jq -c '._id|=.["$oid"] | .tags|=@json | .buydate|=.["$date"]/1000 | .date|=.["$date"]/1000' > $out
+mongoexport -d jd -c review -q "$query" -o $out.raw
+jq -c '._id|=.["$oid"] | .tags|=@json | .buydate|=.["$date"]/1000 | .date|=.["$date"]/1000' $out.raw > $out
+zip $out.zip $out
+mongo jd --eval "db.review.remove($query)"
 
-echo "[$(date +%FT%T)] end"
+echo "[$(date +%FT%T)] ====== end ======"
+
