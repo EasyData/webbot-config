@@ -1,0 +1,15 @@
+#!/bin/bash
+# export JD reviews
+
+now=$(date +%F)
+ago=$(date -d '1 day ago' +%F)
+start=$(date -d $ago +%s000)
+end=$(date -d $now +%s000)
+out=jd-review-$ago.json
+
+echo "[$(date +%FT%T)] begin"
+
+mongoexport -d jd -c review -q "{date:{\$gte:new Date($start),\$lt:new Date($end)}}" |
+    jq -c '._id|=.["$oid"] | .tags|=@json | .buydate|=.["$date"]/1000 | .date|=.["$date"]/1000' > $out
+
+echo "[$(date +%FT%T)] end"
