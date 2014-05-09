@@ -38,6 +38,9 @@ zip $out.zip $out
 rm $out $raw
 mongo jd --eval "db.review.remove($query)"
 
+# sync
+rsync -a out/ data:jd/
+
 # end
 echo "[$(date +%FT%T)] ====== end ======"
 
