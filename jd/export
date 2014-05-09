@@ -9,6 +9,7 @@ end=$(date -d $now +%s000)
 query="{date:{\$gte:new Date($start),\$lt:new Date($end)}}"
 
 # setup
+cd "$(dirname "${BASH_SOURCE[0]}")"
 dir=out
 out=$dir/jd-review-$ago.json
 raw=$out.raw
