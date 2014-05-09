@@ -1,19 +1,42 @@
 #!/bin/bash
 # export JD reviews
 
+# define
 now=$(date +%F)
 ago=$(date -d '1 day ago' +%F)
 start=$(date -d $ago +%s000)
 end=$(date -d $now +%s000)
-out=jd-review-$ago.json
 query="{date:{\$gte:new Date($start),\$lt:new Date($end)}}"
 
+# setup
+dir=out
+out=$dir/jd-review-$ago.json
+raw=$out.raw
+mkdir -p $dir
+
+if [[ -f $out ]]
+then
+    echo "[$(date +%FT%T)] ====== quit ======"
+    exit 1
+fi
+
+# begin
 echo "[$(date +%FT%T)] ====== begin ======"
 
-mongoexport -d jd -c review -q "$query" -o $out.raw
-jq -c '._id|=.["$oid"] | .tags|=@json | .buydate|=.["$date"]/1000 | .date|=.["$date"]/1000' $out.raw > $out
+# export
+mongoexport -d jd -c review -q "$query" -o $raw
+
+# transform
+jq -c '._id|=.["$oid"] | .tags|=@json | .buydate|=.["$date"]/1000 | .date|=.["$date"]/1000' $raw > $out
+
+# archive
+zip $out.raw.zip $out.raw
 zip $out.zip $out
+
+# clean
+rm $out $raw
 mongo jd --eval "db.review.remove($query)"
 
+# end
 echo "[$(date +%FT%T)] ====== end ======"
 
