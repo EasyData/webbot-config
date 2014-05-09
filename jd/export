@@ -14,7 +14,7 @@ out=$dir/jd-review-$ago.json
 raw=$out.raw
 mkdir -p $dir
 
-if [[ -f $out ]]
+if [[ -f $raw.zip || -f $out.zip ]]
 then
     echo "[$(date +%FT%T)] ====== quit ======"
     exit 1
