@@ -9,11 +9,13 @@ end=$(date -d $now +%s000)
 query="{date:{\$gte:new Date($start),\$lt:new Date($end)}}"
 
 # setup
+PATH=/usr/local/bin:$PATH
 cd "$(dirname "${BASH_SOURCE[0]}")"
 dir=out
-out=$dir/jd-review-$ago.json
-raw=$out.raw
 mkdir -p $dir
+cd $dir
+out=jd-review-$ago.json
+raw=$out.raw
 
 if [[ -f $raw.zip || -f $out.zip ]]
 then
@@ -39,7 +41,7 @@ rm $out $raw
 mongo jd --eval "db.review.remove($query)"
 
 # sync
-rsync -a out/ data:jd/
+rsync -a ./ data:jd/
 
 # end
 echo "[$(date +%FT%T)] ====== end ======"
