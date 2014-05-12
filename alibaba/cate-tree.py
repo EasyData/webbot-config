@@ -39,12 +39,12 @@ def crawl(id, name):
     for i in jsonpath(obj, '$.data.categories.*'):
         print >>sys.stderr, sql.format(i['id'], id, i['name']).encode('utf-8')
         if i['isLeaf']:
-            subitems.append(i['name'])
+            subitems.append(u'{0[id]}:{0[name]}'.format(i))
         elif i['id'] not in seen:
             seen.add(i['id'])
             subitems.append(crawl(i['id'], i['name']))
 
-    return {name: subitems}
+    return {u'{}:{}'.format(id, name): subitems}
 
 if __name__=='__main__':
 
