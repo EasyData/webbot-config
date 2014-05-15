@@ -53,6 +53,7 @@ class RedisDBA(object):
 
         log.msg('connect: %s'%rdb_uri)
         self.rdb = redis.StrictRedis.from_url(rdb_uri)
+        self.timeout = float('inf')
 
     def filter(self, item, meta):
 
@@ -97,7 +98,7 @@ class RedisDBA(object):
                 now = int(time.time())
                 delta = now-zscore
 
-                if delta>3600*24:
+                if delta>self.timeout:
 
                     # timeline
                     zscore = now
