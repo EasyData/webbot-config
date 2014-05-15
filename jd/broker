@@ -75,7 +75,7 @@ class Broker(object):
 
 if __name__=='__main__':
 
-    log.startLogging(DailyLogFile.fromFullPath("/tmp/broker.log"))
+    log.startLogging(DailyLogFile.fromFullPath("/tmp/jd-broker.log"))
 
     Broker(
         'tcp://*:4444',
