@@ -97,7 +97,7 @@ class RedisDBA(object):
                 now = int(time.time())
                 delta = now-zscore
 
-                if delta>3600:
+                if delta>3600*24:
 
                     # timeline
                     zscore = now
