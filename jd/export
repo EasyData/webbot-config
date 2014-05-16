@@ -11,11 +11,10 @@ query="{date:{\$gte:new Date($start),\$lt:new Date($end)}}"
 # setup
 PATH=/usr/local/bin:$PATH
 cd "$(dirname "${BASH_SOURCE[0]}")"
-dir=out
+dir=/var/www/jd
 mkdir -p $dir
 cd $dir
 out=jd-review-$ago.json
-raw=$out.raw
 
 if [[ -f $raw.zip || -f $out.zip ]]
 then
@@ -27,21 +26,14 @@ fi
 echo "[$(date +%FT%T)] ====== begin ======"
 
 # export
-mongoexport -d jd -c review -q "$query" -o $raw
-
-# transform
-jq -c '._id|=.["$oid"] | .tags|=@json | .buydate|=.["$date"]/1000 | .date|=.["$date"]/1000' $raw > $out
+mongoexport -d jd -c review -q "$query" -o $out
 
 # archive
-zip $out.raw.zip $out.raw
 zip $out.zip $out
 
 # clean
-rm $out $raw
+rm $out
 mongo jd --eval "db.review.remove($query)"
-
-# sync
-rsync -a ./ data:jd/
 
 # end
 echo "[$(date +%FT%T)] ====== end ======"
