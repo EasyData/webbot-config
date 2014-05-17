@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# simple broker for webbot
+# Broker for <http://go.1688.com>
 
 from twisted.internet import reactor
 from twisted.python import log
@@ -22,31 +22,6 @@ except ImportError:
 # all -> pending -> running -> finished #
 #########################################
 
-class ItemParser(object):
-
-    metas = {
-        'alibaba:go:idx': {
-            'mp': 'alibaba:go', # mongo prefix
-            'mk': 'oid',        # mongo key
-            'rp': 'alibaba:go', # redis prefix
-            'rk': 'pending',    # redis key
-            'rv': 'oid',        # redis val
-        },
-        'alibaba:go:detail': {
-            'mp': 'alibaba:go', # mongo prefix
-            'mk': 'oid',        # mongo key
-            'rp': 'alibaba:go', # redis prefix
-            'rk': 'finished',   # redis key
-            'rv': 'oid',        # redis val
-        }
-    }
-
-    def parse(self, data):
-
-        meta = self.metas[data['_meta']]
-        del data['_meta']
-        return data, meta
-
 class RedisDBA(object):
 
     def __init__(self, rdb_uri):
@@ -55,76 +30,50 @@ class RedisDBA(object):
         self.rdb = redis.StrictRedis.from_url(rdb_uri)
         self.timeout = float('inf')
 
-    def filter(self, item, meta):
+    def filter(self, item):
 
-        rp = meta['rp']
-        rk = meta['rk']
-        rv = meta['rv']
+        meta = item['_meta']
+        oid = item['oid']
+        now = int(time.time())
 
-        val = item[rv]
+        if meta=='alibaba:go:idx':
 
-        if rk=='pending':
+            if self.rdb.sadd('alibaba:go:all', oid):
+                self.rdb.zadd('alibaba:go:timeline', now, oid)
+                self.rdb.rpush('alibaba:go:pending', oid)
 
-            skey = '{}:all'.format(rp)
-            sval = val
-
-            if self.rdb.sadd(skey, sval):
-
-                # timeline
-                zkey = '{}:timeline'.format(rp)
-                zval = val
-                zscore = int(time.time())
-                self.rdb.zadd(zkey, zscore, zval)
-
-                # pending
-                lkey = '{}:pending'.format(rp)
-                lval = val
-                self.rdb.rpush(lkey, lval)
+                mid = item['mid']
+                if self.rdb.sadd('alibaba:corp:idx:all', mid):
+                    self.rdb.rpush('alibaba:corp:contact:pending', mid)
+                    self.rdb.rpush('alibaba:corp:detail:pending', mid)
+                    self.rdb.rpush('alibaba:corp:geo:pending', mid)
 
                 return True
 
             else:
 
-                # finished
-                zkey = '{}:finished'.format(rp)
-                zval = val
-                if self.rdb.zrank(zkey, zval)!=None:
+                if self.rdb.zrank('alibaba:go:finished', oid)!=None:
                     return False
 
-                # timeline
-                zkey = '{}:timeline'.format(rp)
-                zval = val
-                zscore = self.rdb.zscore(zkey, zval)
-                now = int(time.time())
+                zscore = self.rdb.zscore('alibaba:go:timeline', oid)
                 delta = now-zscore
-
                 if delta>self.timeout:
-
-                    # timeline
-                    zscore = now
-                    self.rdb.zadd(zkey, zscore, zval)
-
-                    # pending
-                    lkey = '{}:pending'.format(rp)
-                    lval = val
-                    self.rdb.lpush(lkey, lval)
+                    self.rdb.zadd('aliabab:go:timeline', now, oid)
+                    self.rdb.lpush('alibaba:go:pending', oid)
                     return True
-
                 else:
-
                     return False
 
-        elif rk=='finished':
+        elif meta=='alibaba:go:detail':
 
-            # finished
-            zkey = '{}:finished'.format(rp)
-            zval = val
-            zscore = int(time.time())
-            return self.rdb.zadd(zkey, zscore, zval)
+            if self.rdb.sismember('alibaba:go:all', oid):
+                return self.rdb.zadd('alibaba:go:finished', now, oid)
+            else:
+                return False
 
         else:
 
-            return True
+            return False
 
 class MongoDBA(object):
 
@@ -134,18 +83,16 @@ class MongoDBA(object):
         parsed = pymongo.uri_parser.parse_uri(mongo_uri)
         host, port = parsed['nodelist'][0]
         db, tbl = parsed['database'], parsed['collection']
-        self.mdb = pymongo.MongoClient(host, port)[db][tbl]
+        self.mdb = pymongo.MongoClient(host, port)[db]
 
-    def save(self, item, meta):
+    def save(self, item):
 
-        try:
-            mk = meta.get('mk')
-            if mk:
-                self.mdb.update({mk:item[mk]}, item, upsert=True)
-            else:
-                self.mdb.insert(item)
-        except:
-            pass
+        meta = item.pop('_meta')
+
+        if meta=='alibaba:go:idx':
+            self.mdb.go_idx.update({'oid':item['oid']}, item, upsert=True)
+        elif meta=='alibaba:go:detail':
+            self.mdb.go_detail.update({'oid':item['oid']}, item, upsert=True)
 
 class Broker(object):
 
@@ -160,16 +107,15 @@ class Broker(object):
         self.cnn.onPull = self.process
         self.rdba = RedisDBA(rdb_uri)
         self.mdba = MongoDBA(mdb_uri)
-        self.parse = ItemParser().parse
 
     def process(self, msg):
 
         try:
             buf = msg[0]
-            data = pickle.loads(buf)
-            item, meta = self.parse(data)
-            if self.rdba.filter(item, meta):
-                self.mdba.save(item, meta)
+            item = pickle.loads(buf)
+            if self.rdba.filter(item):
+                log.msg('save: %s'%item['oid'])
+                self.mdba.save(item)
         except:
             log.err()
 
