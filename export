@@ -1,0 +1,51 @@
+#!/bin/bash
+# export JD reviews
+
+# define
+now=$(date +%F)
+ago=$(date -d '1 day ago' +%F)
+start=$(date -d $ago +%s000)
+end=$(date -d $now +%s000)
+query="{date:{\$gte:new Date($start),\$lt:new Date($end)}}"
+
+# setup
+PATH=/usr/local/bin:$PATH
+
+dump() {
+
+    db=${1:?db is empty}
+
+    dir=/var/www/$db
+    mkdir -p $dir
+    cd $dir
+    out=$db-review-$ago.json
+
+    if [[ -f $out.zip ]]
+    then
+        echo "[$(date +%FT%T)] ====== quit ======"
+        return 1
+    fi
+
+    # begin
+    echo "[$(date +%FT%T)] ====== begin ======"
+
+    # export
+    mongoexport -d $db -c review -q "$query" -o $out
+
+    # archive
+    zip $out.zip $out
+
+    # clean
+    rm $out
+    mongo jd --eval "db.review.remove($query)"
+
+    # end
+    echo "[$(date +%FT%T)] ====== end ======"
+
+}
+
+for db in jd suning gome
+do
+    echo "[$(date +%FT%T)] ====== [$db] ======"
+    dump $db
+done
