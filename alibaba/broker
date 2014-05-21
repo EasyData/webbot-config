@@ -35,7 +35,7 @@ class RedisDBA(object):
         now = int(time.time())
         meta = item['_meta']
         oid = item['oid']
-        log.msg('receive: %s'%oid)
+        log.msg('receive: %s (%s)'%(meta, oid))
 
         if meta=='alibaba:go:idx':
 
