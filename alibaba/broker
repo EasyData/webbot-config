@@ -32,9 +32,10 @@ class RedisDBA(object):
 
     def filter(self, item):
 
+        now = int(time.time())
         meta = item['_meta']
         oid = item['oid']
-        now = int(time.time())
+        log.msg('receive: %s'%oid)
 
         if meta=='alibaba:go:idx':
 
@@ -69,6 +70,7 @@ class RedisDBA(object):
             if self.rdb.sismember('alibaba:go:all', oid):
                 return self.rdb.zadd('alibaba:go:finished', now, oid)
             else:
+                log.msg('ignore: %s'%oid)
                 return False
 
         else:
