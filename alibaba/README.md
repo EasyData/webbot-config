@@ -23,6 +23,8 @@
     400     Client Error
     500     Server Error
 
+> 另外, 请求/响应, 统一使用UNIX时间戳(类型:`float`, 单位:`second`), 来表示时间.
+
 ----
 
 ## hint.json
@@ -76,7 +78,7 @@
 
 ### 返回
 
-- `data`: 数据
+- `data`: 数据(草案)
 
 ### 示例
 
@@ -111,7 +113,7 @@
 ### 参数
 
 - `site`: 站点名称(必填), 取值范围: `alibaba`
-- `oid`: 求购编号(必填), 
+- `oid`: 求购编号(必填), 必须于`site`相对应
 
 ### 返回
 
@@ -120,7 +122,7 @@
 ### 示例
 
     # HTTP请求
-    curl 'http://localhost:9090/hint.json?cate_ids=53,57,58,9999&min_time=1400728660.000'
+    curl 'http://localhost:9090/fetch.json?site=alibaba&oid=32788354'
 
     # HTTP响应
     {
