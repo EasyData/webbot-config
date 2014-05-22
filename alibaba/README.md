@@ -35,9 +35,9 @@
 
 ### 参数
 
-- `cate_ids`: 分类编号(必填), 多个编号之间用逗号分割
-- `min_time`: 最小时间(必填)
-- `max_time`: 最大时间(可选), 默认值为:0
+- `cates`: 分类编号(必填), 多个编号之间用逗号分割
+- `mintime`: 最小时间(必填)
+- `maxtime`: 最大时间(可选), 默认值为:0
 
 ### 返回
 
@@ -49,7 +49,7 @@
 
 
     # HTTP请求
-    curl 'http://localhost:9090/hint.json?cate_ids=53,57,58,9999&min_time=1400728660.000'
+    curl 'http://localhost:9090/hint.json?cates=53,57,58,9999&mintime=1400728660.000'
 
     # HTTP响应
     {
@@ -72,18 +72,18 @@
 
 ### 参数
 
-- `cate_ids`: 分类编号(必填), 多个编号之间用逗号分割
-- `min_time`: 最小时间(必填)
-- `max_time`: 最大时间(可选), 默认值为:0
+- `cates`: 分类编号(必填), 多个编号之间用逗号分割
+- `mintime`: 最小时间(必填)
+- `maxtime`: 最大时间(可选), 默认值为0(表示当前时间)
 
 ### 返回
 
-- `data`: 数据(草案)
+- `data`: 数据
 
 ### 示例
 
     # HTTP请求
-    curl 'http://localhost:9090/poll.json?cate_ids=57,58&min_time=1400728660.000'
+    curl 'http://localhost:9090/poll.json?cates=57,58&mintime=1400728660.000'
 
     # HTTP响应
     {
@@ -92,14 +92,14 @@
         "time": 1400729292.232,
         "data": {
             "57": [
-                {"time": 1400728670.000, "site":"alibaba", "oid":"xxxxxx", "title":"xxxxxx"},
-                {"time": 1400728680.000, "site":"alibaba", "oid":"xxxxxx", "title":"xxxxxx"}
+                {"time": 1400728670.000, "site":"alibaba", "oid":"xxxxxx", "title":"xxxxxx", "cates":["57", "1043726"]},
+                {"time": 1400728680.000, "site":"alibaba", "oid":"yyyyyy", "title":"yyyyyy", "cates":["57", "122250002", "122218012"]}
             ],
             "58": [
-                {"time": 1400728690.000, "site":"alibaba", "oid":"xxxxxx", "title":"xxxxxx"},
-                {"time": 1400728692.000, "site":"alibaba", "oid":"xxxxxx", "title":"xxxxxx"},
-                {"time": 1400728694.000, "site":"alibaba", "oid":"xxxxxx", "title":"xxxxxx"},
-                {"time": 1400728696.000, "site":"alibaba", "oid":"xxxxxx", "title":"xxxxxx"}
+                {"time": 1400728690.000, "site":"alibaba", "oid":"zzzzzz", "title":"zzzzzz", "cates":["58"]},
+                {"time": 1400728692.000, "site":"alibaba", "oid":"aaaaaa", "title":"aaaaaa", "cates":["58", "121192010", "1046762"]},
+                {"time": 1400728694.000, "site":"alibaba", "oid":"bbbbbb", "title":"bbbbbb", "cates":["58", "1046758"]},
+                {"time": 1400728696.000, "site":"alibaba", "oid":"cccccc", "title":"cccccc", "cates":["58"]}
             ]
         }
     }
@@ -117,7 +117,7 @@
 
 ### 返回
 
-- `data`: 数据(草案)
+- `data`: 数据(待定)
 
 ### 示例
 
