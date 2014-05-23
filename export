@@ -44,7 +44,7 @@ dump() {
 
 }
 
-for db in jd suning gome amazon
+for db in jd suning gome amazon yixun
 do
     echo "[$(date +%FT%T)] ====== [$db] ======"
     dump $db
