@@ -5,6 +5,7 @@ from twisted.internet import reactor
 from twisted.python import log
 from twisted.python.logfile import DailyLogFile
 from txzmq import ZmqEndpoint, ZmqFactory, ZmqPullConnection
+import operator
 import logging
 import math
 import pymongo
@@ -24,8 +25,9 @@ except ImportError:
 
 class RedisDBA(object):
 
-    def __init__(self, rdb_uri):
+    def __init__(self, broker, rdb_uri):
 
+        self.broker = broker
         log.msg('connect: %s'%rdb_uri)
         self.rdb = redis.StrictRedis.from_url(rdb_uri)
         self.timeout = float('inf')
@@ -67,25 +69,36 @@ class RedisDBA(object):
 
         elif meta=='alibaba:go:detail':
 
+            patch = self.broker.mdba.find(oid)
+            item.update(patch)
+
             if self.rdb.sismember('alibaba:go:all', oid):
+                for cate in item['cates']:
+                    self.rdb.zadd('alibaba:go:cate:%s'%cate, item['time'], oid)
                 return self.rdb.zadd('alibaba:go:finished', now, oid)
             else:
                 log.msg('ignore: %s'%oid)
                 return False
-
         else:
-
             return False
 
 class MongoDBA(object):
 
-    def __init__(self, mongo_uri):
+    def __init__(self, broker, mongo_uri):
 
+        self.broker = broker
         log.msg('connect: %s'%mongo_uri)
         parsed = pymongo.uri_parser.parse_uri(mongo_uri)
         host, port = parsed['nodelist'][0]
         db, tbl = parsed['database'], parsed['collection']
         self.mdb = pymongo.MongoClient(host, port)[db]
+
+    def find(self, oid):
+
+        item = self.mdb.go_idx.find_one({'oid':oid})
+        keys = ['oid', 'mid', 'icons', 'buyer']
+        vals = operator.itemgetter(*keys)(item)
+        return dict(zip(keys, vals))
 
     def save(self, item):
 
@@ -107,8 +120,8 @@ class Broker(object):
         zf.registerForShutdown()
         self.cnn = ZmqPullConnection(zf, ze)
         self.cnn.onPull = self.process
-        self.rdba = RedisDBA(rdb_uri)
-        self.mdba = MongoDBA(mdb_uri)
+        self.rdba = RedisDBA(self, rdb_uri)
+        self.mdba = MongoDBA(self, mdb_uri)
 
     def process(self, msg):
 
