@@ -41,7 +41,7 @@ class Broker(object):
 
     def filter(self, item):
 
-        for site in ['suning', 'amazon', 'yixun']:
+        for site in ['suning', 'amazon', 'yixun', 'dangdang']:
             if site+'.c' in item.get('url', ''):
                 break
         else:
