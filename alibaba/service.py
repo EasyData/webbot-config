@@ -17,7 +17,7 @@ class WebAPI(object):
         self.rdb = redis.StrictRedis(host='localhost', db=9)
         self.mdb = pymongo.MongoClient(host='localhost').alibaba
 
-        self.index_keys = ['oid', 'url', 'title', 'cates', 'time']
+        self.index_keys = ['mid', 'oid', 'url', 'title', 'cates', 'time']
         self.detail_keys = self.index_keys+['addr', 'buyer', 'buy_list']
 
     def ok(self, data):
