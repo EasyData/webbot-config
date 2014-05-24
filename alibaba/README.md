@@ -36,6 +36,7 @@
 
 ### 参数
 
+- `sites`: 站点名称(可选), 多个站点之间用逗号分割
 - `cates`: 分类编号(必填), 多个编号之间用逗号分割
 - `mintime`: 最小时间(可选), 默认值为:0
 - `maxtime`: 最大时间(可选), 默认值为:+∞
@@ -73,6 +74,7 @@
 
 ### 参数
 
+- `sites`: 站点名称(可选), 多个站点之间用逗号分割
 - `cates`: 分类编号(必填), 多个编号之间用逗号分割
 - `mintime`: 最小时间(可选), 默认值为:0
 - `maxtime`: 最大时间(可选), 默认值为:+∞
@@ -119,34 +121,46 @@
 ### 示例
 
     # HTTP请求
-    curl 'http://localhost:9090/fetch.json?site=alibaba&oid=32788354'
+    curl 'http://localhost:9090/fetch.json?site=alibaba&oid=33656618'
 
     # HTTP响应
     {
-        "code": 200,
-        "msg": "OK",
-        "time": 1400729292.232,
-        "data": {
-            "site": "alibaba",
-            "url": "http://go.1688.com/buyoffer/32788354.htm",
-            "oid": "32788354",
-            "title": "彩色毛毡布",
-            "cates": ["4", "1031770"],
-            "addr": "江苏南京",
-            "buyer": "凌进龙（个体经营）",
-            "buy_list": [
-                {
-                    "count" : 2,
-                    "product" : "彩色毛毡布",
-                    "img" : null,
-                    "unit" : "吨",
-                    "desc" : null
-                }
-            ],
-            "time": 1400672306
-        }
+      "code": 200,
+      "msg": "OK"
+      "time": 1400907988.005676,
+      "data": {
+        "buyer": "青岛卡乐夫贸易有限公司",
+        "time": 1400904008,
+        "cates": [
+          "2",
+          "229"
+        ],
+        "buy_list": [
+          {
+            "desc": null,
+            "img": null,
+            "unit": "kg",
+            "product": "多春鱼籽",
+            "count": 1000
+          }
+        ],
+        "addr": "山东青岛",
+        "title": "蟹黄鱼籽--染色多春鱼籽",
+        "url": "http://go.1688.com/buyoffer/33656618.htm",
+        "oid": "33656618",
+        "mid": "b2b-1740827997",
+        "site": "alibaba",
+        "req_list": [
+          {
+            "extra_info": "多春鱼籽染色（蟹黄色）",
+            "invoice": "无需发票",
+            "payment": "支付宝担保交易",
+            "rcv_addr": "山东 青岛 即墨市"
+          }
+        ]
+      }
     }
-
+    
 ## contact.json
 
 ### 用途
