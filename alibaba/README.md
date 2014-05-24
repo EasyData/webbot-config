@@ -5,6 +5,7 @@
 - hint.json
 - poll.json
 - fetch.json
+- contact.json
 
 服务器返回JSON数据格式:
 
@@ -144,5 +145,40 @@
             ],
             "time": 1400672306
         }
+    }
+
+## contact.json
+
+### 用途
+
+获取指定站点的，指定用户编号的联系信息
+
+### 参数
+
+- `site`: 站点名称(必填), 取值范围: `alibaba`
+- `mid`: 用户编号(必填), 必须于`site`相对应
+
+### 返回
+
+- `data`: 数据
+
+### 示例
+
+    # HTTP请求
+    curl 'http://localhost:9090/contact.json?site=alibaba&mid=b2b-1740827997'
+
+    # HTTP响应
+    {
+      "code": 200,
+      "msg": "OK",
+      "time": 1400907431.057254,
+      "data": {
+        "site": "alibaba",
+        "mid": "b2b-1740827997",
+        "contact": "王海涛 先生 （总经理）",
+        "phone": "86 0532 15253220238",
+        "mobile": "15253220238",
+        "address": "中国 山东 青岛市崂山区青大一路9号"
+      }
     }
 

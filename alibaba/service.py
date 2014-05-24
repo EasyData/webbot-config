@@ -15,10 +15,12 @@ class WebAPI(object):
     def __init__(self):
 
         self.rdb = redis.StrictRedis(host='localhost', db=9)
-        self.mdb = pymongo.MongoClient(host='localhost').alibaba
+        self.mdb = pymongo.MongoClient(host='localhost')
 
         self.index_keys = ['mid', 'oid', 'url', 'title', 'cates', 'time']
-        self.detail_keys = self.index_keys+['addr', 'buyer', 'buy_list']
+        self.detail_keys = self.index_keys+['addr', 'buyer', 'buy_list', 'req_list']
+        self.contact_keys = ['mid', 'phone', 'mobile', 'contact', 'address']
+        self.sites = ['alibaba']
 
     def ok(self, data):
         return self.response(200, data)
@@ -47,46 +49,47 @@ class WebAPI(object):
 
     def parse_args(self):
         args = request.args
+        sites = [i for i in args.get('sites', ','.join(self.sites)).split(',') if i in self.sites]
         cates = args['cates'].split(',')
         mintime = float(args.get('mintime', 0))
         maxtime = float(args.get('maxtime', float('inf')))
-        return cates, mintime, maxtime
+        return sites, cates, mintime, maxtime
 
     def index(self):
         return self.ok(u'欢迎使用')
 
     def hint(self):
         try:
-            cates, mintime, maxtime = self.parse_args()
-            data = {}
+            sites, cates, mintime, maxtime = self.parse_args()
+            data = defaultdict(int)
             for cate in cates:
-                zkey = 'alibaba:go:cate:%s'%cate
-                count = self.rdb.zcount(zkey, mintime, maxtime)
-                data[cate] = count
-
+                for site in sites:
+                    zkey = '%s:go:cate:%s' % (site, cate)
+                    count = self.rdb.zcount(zkey, mintime, maxtime)
+                    data[cate] += count
             return self.ok(data)
         except:
             return self.err(400)
 
     def poll(self):
         try:
-            cates, mintime, maxtime = self.parse_args()
+            sites, cates, mintime, maxtime = self.parse_args()
             data = []
-            oids = set()
-            for cate in cates:
-                zkey = 'alibaba:go:cate:%s'%cate
-                oids |= set(self.rdb.zrangebyscore(zkey, mintime, maxtime))
-            for obj in self.mdb.go_detail.find({'oid': {'$in': list(oids)}}):
-                item = dict(zip(self.index_keys, operator.itemgetter(*self.index_keys)(obj)))
-                item['site'] = 'alibaba'
-                data.append(item)
+            for site in sites:
+                oids = set()
+                for cate in cates:
+                    zkey = '%s:go:cate:%s' % (site, cate)
+                    oids |= set(self.rdb.zrangebyscore(zkey, mintime, maxtime))
+                for obj in self.mdb[site].go_detail.find({'oid': {'$in': list(oids)}}):
+                    item = dict(zip(self.index_keys, operator.itemgetter(*self.index_keys)(obj)))
+                    item['site'] = site
+                    data.append(item)
             data.sort(key=itemgetter('time'), reverse=True)
             return self.ok(data)
         except:
             return self.err(400)
 
     def fetch(self):
-
         try:
             args = request.args
             site = args['site']
@@ -97,10 +100,30 @@ class WebAPI(object):
 
     def fetch2(self, site, oid):
         try:
-            if site not in ['alibaba']:
+            if site not in self.sites:
                 raise Exception()
-            obj = self.mdb.go_detail.find_one({'oid':oid})
+            obj = self.mdb[site].go_detail.find_one({'oid':oid})
             data = dict(zip(self.detail_keys, operator.itemgetter(*self.detail_keys)(obj)))
+            data['site'] = site
+            return self.ok(data)
+        except:
+            return self.err(404)
+
+    def contact(self):
+        try:
+            args = request.args
+            site = args['site']
+            mid = args['mid']
+            return self.contact2(site, mid)
+        except:
+            return self.err(400)
+
+    def contact2(self, site, mid):
+        try:
+            if site not in self.sites:
+                raise Exception()
+            obj = self.mdb[site].contact.find_one({'mid':mid})
+            data = dict(zip(self.contact_keys, operator.itemgetter(*self.contact_keys)(obj)))
             data['site'] = site
             return self.ok(data)
         except:
@@ -112,7 +135,9 @@ class WebAPI(object):
         app.route('/hint.json')(self.hint)
         app.route('/poll.json')(self.poll)
         app.route('/fetch.json')(self.fetch)
-        app.route('/fetch/<site>/<oid>')(self.fetch)
+        app.route('/fetch/<site>/<oid>')(self.fetch2)
+        app.route('/contact.json')(self.contact)
+        app.route('/contact/<site>/<mid>')(self.contact2)
         app.run(host='0.0.0.0', port=9090, debug=True)
 
 if __name__ == "__main__":
