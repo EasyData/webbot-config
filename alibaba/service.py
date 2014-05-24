@@ -13,8 +13,12 @@ from flask import Flask, abort, request, after_this_request
 class WebAPI(object):
 
     def __init__(self):
+
         self.rdb = redis.StrictRedis(host='localhost', db=9)
         self.mdb = pymongo.MongoClient(host='localhost').alibaba
+
+        self.index_keys = ['oid', 'url', 'title', 'cates', 'time']
+        self.detail_keys = self.index_keys+['addr', 'buyer', 'buy_list']
 
     def ok(self, data):
         return self.response(200, data)
@@ -73,8 +77,7 @@ class WebAPI(object):
                 zkey = 'alibaba:go:cate:%s'%cate
                 oids |= set(self.rdb.zrangebyscore(zkey, mintime, maxtime))
             for obj in self.mdb.go_detail.find({'oid': {'$in': list(oids)}}):
-                keys = ['oid', 'url', 'title', 'cates', 'time']
-                item = dict(zip(keys, operator.itemgetter(*keys)(obj)))
+                item = dict(zip(self.index_keys, operator.itemgetter(*self.index_keys)(obj)))
                 item['site'] = 'alibaba'
                 data.append(item)
             data.sort(key=itemgetter('time'), reverse=True)
@@ -82,11 +85,23 @@ class WebAPI(object):
         except:
             return self.err(400)
 
-    def fetch(self, site, oid):
+    def fetch(self):
+
         try:
+            args = request.args
+            site = args['site']
+            oid = args['oid']
+            return self.fetch2(site, oid)
+        except:
+            return self.err(400)
+
+    def fetch2(self, site, oid):
+        try:
+            if site not in ['alibaba']:
+                raise Exception()
             obj = self.mdb.go_detail.find_one({'oid':oid})
-            keys = ['oid', 'title', 'cates', 'time']
-            data = dict(zip(keys, operator.itemgetter(*keys)(obj)))
+            data = dict(zip(self.detail_keys, operator.itemgetter(*self.detail_keys)(obj)))
+            data['site'] = site
             return self.ok(data)
         except:
             return self.err(404)
@@ -96,6 +111,7 @@ class WebAPI(object):
         app.route('/')(self.index)
         app.route('/hint.json')(self.hint)
         app.route('/poll.json')(self.poll)
+        app.route('/fetch.json')(self.fetch)
         app.route('/fetch/<site>/<oid>')(self.fetch)
         app.run(host='0.0.0.0', port=9090, debug=True)
 

@@ -36,8 +36,8 @@
 ### 参数
 
 - `cates`: 分类编号(必填), 多个编号之间用逗号分割
-- `mintime`: 最小时间(必填)
-- `maxtime`: 最大时间(可选), 默认值为:0
+- `mintime`: 最小时间(可选), 默认值为:0
+- `maxtime`: 最大时间(可选), 默认值为:+∞
 
 ### 返回
 
@@ -73,8 +73,8 @@
 ### 参数
 
 - `cates`: 分类编号(必填), 多个编号之间用逗号分割
-- `mintime`: 最小时间(必填)
-- `maxtime`: 最大时间(可选), 默认值为0(表示当前时间)
+- `mintime`: 最小时间(可选), 默认值为:0
+- `maxtime`: 最大时间(可选), 默认值为:+∞
 
 ### 返回
 
@@ -90,18 +90,14 @@
         "code": 200,
         "msg": "OK",
         "time": 1400729292.232,
-        "data": {
-            "57": [
-                {"time": 1400728670.000, "site":"alibaba", "oid":"xxxxxx", "title":"xxxxxx", "cates":["57", "1043726"]},
-                {"time": 1400728680.000, "site":"alibaba", "oid":"yyyyyy", "title":"yyyyyy", "cates":["57", "122250002", "122218012"]}
-            ],
-            "58": [
-                {"time": 1400728690.000, "site":"alibaba", "oid":"zzzzzz", "title":"zzzzzz", "cates":["58"]},
-                {"time": 1400728692.000, "site":"alibaba", "oid":"aaaaaa", "title":"aaaaaa", "cates":["58", "121192010", "1046762"]},
-                {"time": 1400728694.000, "site":"alibaba", "oid":"bbbbbb", "title":"bbbbbb", "cates":["58", "1046758"]},
-                {"time": 1400728696.000, "site":"alibaba", "oid":"cccccc", "title":"cccccc", "cates":["58"]}
-            ]
-        }
+        "data": [
+            {"time": 1400728696.000, "site":"alibaba", "oid":"666666", "url":"http://go.1688.com/buyoffer/666666.htm", "title":"cccccc", "cates":["58"]},
+            {"time": 1400728694.000, "site":"alibaba", "oid":"555555", "url":"http://go.1688.com/buyoffer/555555.htm", "title":"bbbbbb", "cates":["58", "1046758"]},
+            {"time": 1400728692.000, "site":"alibaba", "oid":"444444", "url":"http://go.1688.com/buyoffer/444444.htm", "title":"aaaaaa", "cates":["58", "121192010", "1046762"]},
+            {"time": 1400728690.000, "site":"alibaba", "oid":"333333", "url":"http://go.1688.com/buyoffer/333333.htm", "title":"zzzzzz", "cates":["58"]},
+            {"time": 1400728680.000, "site":"alibaba", "oid":"222222", "url":"http://go.1688.com/buyoffer/222222.htm", "title":"yyyyyy", "cates":["57", "122250002", "122218012"]},
+            {"time": 1400728670.000, "site":"alibaba", "oid":"111111", "url":"http://go.1688.com/buyoffer/111111.htm", "title":"xxxxxx", "cates":["57", "1043726"]}
+        ]
     }
 
 ## fetch.json
