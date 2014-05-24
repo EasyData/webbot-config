@@ -6,6 +6,8 @@ import operator
 import time
 import redis
 import pymongo
+from collections import defaultdict
+from operator import itemgetter
 from flask import Flask, abort, request, after_this_request
 
 class WebAPI(object):
@@ -65,15 +67,19 @@ class WebAPI(object):
     def poll(self):
         try:
             cates, mintime, maxtime = self.parse_args()
-            data = {}
+            data = []
+            oids = set()
             for cate in cates:
                 zkey = 'alibaba:go:cate:%s'%cate
-                oids = self.rdb.zrangebyscore(zkey, mintime, maxtime)
-                for item in self.mdb.go_detail.find({'oid': {'$in', oids}}):
-                    print '>>>', item
+                oids |= set(self.rdb.zrangebyscore(zkey, mintime, maxtime))
+            for obj in self.mdb.go_detail.find({'oid': {'$in': list(oids)}}):
+                keys = ['oid', 'url', 'title', 'cates', 'time']
+                item = dict(zip(keys, operator.itemgetter(*keys)(obj)))
+                item['site'] = 'alibaba'
+                data.append(item)
+            data.sort(key=itemgetter('time'), reverse=True)
             return self.ok(data)
         except:
-            raise
             return self.err(400)
 
     def fetch(self, site, oid):
