@@ -7,7 +7,8 @@ import time
 import redis
 import pymongo
 from collections import defaultdict
-from operator import itemgetter
+from itertools import ifilter, ifilterfalse, tee
+from operator import itemgetter, methodcaller
 from flask import Flask, abort, request, after_this_request
 
 class WebAPI(object):
@@ -20,6 +21,7 @@ class WebAPI(object):
         self.index_keys = ['mid', 'oid', 'url', 'title', 'cates', 'time']
         self.detail_keys = self.index_keys+['addr', 'buyer', 'buy_list', 'req_list']
         self.contact_keys = ['mid', 'phone', 'mobile', 'contact', 'address']
+        self.geo_keys = ['mid', 'longitude', 'latitude']
         self.sites = ['alibaba']
 
     def ok(self, data):
@@ -50,10 +52,15 @@ class WebAPI(object):
     def parse_args(self):
         args = request.args
         sites = [i for i in args.get('sites', ','.join(self.sites)).split(',') if i in self.sites]
-        cates = args['cates'].split(',')
+        cates = set(args['cates'].split(','))
         mintime = float(args.get('mintime', 0))
         maxtime = float(args.get('maxtime', float('inf')))
         return sites, cates, mintime, maxtime
+
+    @staticmethod
+    def partition(pred, iterable):
+        t1, t2 = tee(iterable)
+        return ifilterfalse(pred, t1), ifilter(pred, t2)
 
     def index(self):
         return self.ok(u'欢迎使用')
@@ -129,6 +136,26 @@ class WebAPI(object):
         except:
             return self.err(404)
 
+    def geo(self):
+        try:
+            args = request.args
+            site = args['site']
+            mid = args['mid']
+            return self.geo2(site, mid)
+        except:
+            return self.err(400)
+
+    def geo2(self, site, mid):
+        try:
+            if site not in self.sites:
+                raise Exception()
+            obj = self.mdb[site].geo.find_one({'mid':mid})
+            data = dict(zip(self.geo_keys, operator.itemgetter(*self.geo_keys)(obj)))
+            data['site'] = site
+            return self.ok(data)
+        except:
+            return self.err(404)
+
     def run(self):
         app = Flask(__name__)
         app.route('/')(self.index)
@@ -138,6 +165,8 @@ class WebAPI(object):
         app.route('/fetch/<site>/<oid>')(self.fetch2)
         app.route('/contact.json')(self.contact)
         app.route('/contact/<site>/<mid>')(self.contact2)
+        app.route('/geo.json')(self.geo)
+        app.route('/geo/<site>/<mid>')(self.geo2)
         app.run(host='0.0.0.0', port=9090, debug=True)
 
 if __name__ == "__main__":
