@@ -79,6 +79,7 @@
 - `cates`: 分类编号(必填), 多个编号之间用逗号分割
 - `mintime`: 最小时间(可选), 默认值为:0
 - `maxtime`: 最大时间(可选), 默认值为:+∞
+- `limit`: 限制个数(可选), 默认值为:10
 
 ### 返回
 
@@ -87,7 +88,7 @@
 ### 示例
 
     # HTTP请求
-    curl 'http://localhost:9090/poll.json?cates=57,58&mintime=1400728660.000'
+    curl 'http://localhost:9090/poll.json?cates=57,58&maxtime=1400728700.000&limit=5'
 
     # HTTP响应
     {
@@ -95,7 +96,6 @@
         "msg": "OK",
         "time": 1400729292.232,
         "data": [
-            {"time": 1400728696.000, "site":"alibaba", "oid":"666666", "url":"http://go.1688.com/buyoffer/666666.htm", "title":"cccccc", "cates":["58"]},
             {"time": 1400728694.000, "site":"alibaba", "oid":"555555", "url":"http://go.1688.com/buyoffer/555555.htm", "title":"bbbbbb", "cates":["58", "1046758"]},
             {"time": 1400728692.000, "site":"alibaba", "oid":"444444", "url":"http://go.1688.com/buyoffer/444444.htm", "title":"aaaaaa", "cates":["58", "121192010", "1046762"]},
             {"time": 1400728690.000, "site":"alibaba", "oid":"333333", "url":"http://go.1688.com/buyoffer/333333.htm", "title":"zzzzzz", "cates":["58"]},

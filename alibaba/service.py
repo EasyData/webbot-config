@@ -7,6 +7,7 @@ import time
 import redis
 import pymongo
 from collections import defaultdict
+from datetime import datetime
 from itertools import ifilter, ifilterfalse, tee
 from operator import itemgetter, methodcaller
 from flask import Flask, abort, request, after_this_request
@@ -30,11 +31,23 @@ class WebAPI(object):
     def err(self, code):
         return self.response(code, None)
 
+    @staticmethod
+    def json_dumps(obj):
+
+        def default(x):
+            if isinstance(x, datetime):
+                z = datetime.utcfromtimestamp(0)
+                return (x-z).total_seconds()
+            else:
+                return x
+
+        return json.dumps(obj, indent=2, ensure_ascii=False, default=default)
+
     def response(self, code, data):
 
         @after_this_request
         def add_header(response):
-            response.headers['Content-Type'] = 'application/json'
+            response.headers['Content-Type'] = 'application/json; charset=utf-8'
             return response
 
         if 200<=code<300:
@@ -47,7 +60,7 @@ class WebAPI(object):
             msg = 'Unknown Error'
 
         obj = dict(code=code, msg=msg, time=time.time(), data=data)
-        return json.dumps(obj)
+        return self.json_dumps(obj)
 
     def parse_args(self):
         args = request.args
@@ -55,7 +68,8 @@ class WebAPI(object):
         cates = set(args['cates'].split(','))
         mintime = float(args.get('mintime', 0))
         maxtime = float(args.get('maxtime', float('inf')))
-        return sites, cates, mintime, maxtime
+        limit = int(args.get('limit', 10))
+        return sites, cates, mintime, maxtime, limit
 
     @staticmethod
     def partition(pred, iterable):
@@ -67,7 +81,7 @@ class WebAPI(object):
 
     def hint(self):
         try:
-            sites, cates, mintime, maxtime = self.parse_args()
+            sites, cates, mintime, maxtime, _ = self.parse_args()
             data = defaultdict(int)
             for cate in cates:
                 for site in sites:
@@ -80,17 +94,26 @@ class WebAPI(object):
 
     def poll(self):
         try:
-            sites, cates, mintime, maxtime = self.parse_args()
+            sites, cates, mintime, maxtime, limit = self.parse_args()
             data = []
+
             for site in sites:
-                oids = set()
+
+                oids = dict()
                 for cate in cates:
                     zkey = '%s:go:cate:%s' % (site, cate)
-                    oids |= set(self.rdb.zrangebyscore(zkey, mintime, maxtime))
-                for obj in self.mdb[site].go_detail.find({'oid': {'$in': list(oids)}}):
-                    item = dict(zip(self.index_keys, operator.itemgetter(*self.index_keys)(obj)))
+                    for oid,epoch in self.rdb.zrangebyscore(zkey, mintime, maxtime, withscores=True):
+                        oids[oid] = epoch
+
+                oids = oids.items()
+                oids.sort(key=itemgetter(1), reverse=True)
+                oids = dict(oids[:limit]).keys()
+
+                for obj in self.mdb[site].go_detail.find({'oid': {'$in': oids}}):
+                    item = dict(zip(self.index_keys, itemgetter(*self.index_keys)(obj)))
                     item['site'] = site
                     data.append(item)
+
             data.sort(key=itemgetter('time'), reverse=True)
             return self.ok(data)
         except:

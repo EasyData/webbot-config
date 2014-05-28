@@ -34,10 +34,10 @@ class RedisDBA(object):
 
     def filter(self, item):
 
-        now = int(time.time())
+        now = time.time()
+        item['time'] = now
         meta = item['_meta']
         oid = item['oid']
-        log.msg('receive: %s (%s)'%(meta, oid))
 
         if meta=='alibaba:go:idx':
 
@@ -74,7 +74,7 @@ class RedisDBA(object):
 
             if self.rdb.sismember('alibaba:go:idx', oid):
                 for cate in item['cates']:
-                    self.rdb.zadd('alibaba:go:cate:%s'%cate, item['time'], oid)
+                    self.rdb.zadd('alibaba:go:cate:%s'%cate, now, oid)
                 return self.rdb.zadd('alibaba:go:finished', now, oid)
             else:
                 log.msg('ignore: %s'%oid)
@@ -129,7 +129,7 @@ class Broker(object):
             buf = msg[0]
             item = pickle.loads(buf)
             if self.rdba.filter(item):
-                log.msg('save: %s'%item['oid'])
+                log.msg('receive: %(_meta)s (%(oid)s)'%item)
                 self.mdba.save(item)
         except:
             log.err()
