@@ -79,6 +79,7 @@
 - `cates`: 分类编号(必填), 多个编号之间用逗号分割
 - `mintime`: 最小时间(可选), 默认值为:0
 - `maxtime`: 最大时间(可选), 默认值为:+∞
+- `skip`: 起始位置(可选), 默认值为:0
 - `limit`: 限制个数(可选), 默认值为:10
 
 ### 返回
@@ -88,7 +89,7 @@
 ### 示例
 
     # HTTP请求
-    curl 'http://localhost:9090/poll.json?cates=57,58&maxtime=1400728700.000&limit=5'
+    curl 'http://localhost:9090/poll.json?cates=57,58&maxtime=1400728700.000&skip=0&limit=5'
 
     # HTTP响应
     {

@@ -8,7 +8,7 @@ import redis
 import pymongo
 from collections import defaultdict
 from datetime import datetime
-from itertools import ifilter, ifilterfalse, tee
+from itertools import ifilter, ifilterfalse, islice, tee
 from operator import itemgetter, methodcaller
 from flask import Flask, abort, request, after_this_request
 
@@ -68,8 +68,9 @@ class WebAPI(object):
         cates = set(args['cates'].split(','))
         mintime = float(args.get('mintime', 0))
         maxtime = float(args.get('maxtime', float('inf')))
+        skip = int(args.get('skip', 0))
         limit = int(args.get('limit', 10))
-        return sites, cates, mintime, maxtime, limit
+        return sites, cates, mintime, maxtime, skip, limit
 
     @staticmethod
     def partition(pred, iterable):
@@ -77,11 +78,11 @@ class WebAPI(object):
         return ifilterfalse(pred, t1), ifilter(pred, t2)
 
     def index(self):
-        return self.ok(u'欢迎使用')
+        return self.ok(u'阿里求购-数据API')
 
     def hint(self):
         try:
-            sites, cates, mintime, maxtime, _ = self.parse_args()
+            sites, cates, mintime, maxtime, _, _ = self.parse_args()
             data = defaultdict(int)
             for cate in cates:
                 for site in sites:
@@ -94,7 +95,7 @@ class WebAPI(object):
 
     def poll(self):
         try:
-            sites, cates, mintime, maxtime, limit = self.parse_args()
+            sites, cates, mintime, maxtime, skip, limit = self.parse_args()
             data = []
 
             for site in sites:
@@ -107,7 +108,7 @@ class WebAPI(object):
 
                 oids = oids.items()
                 oids.sort(key=itemgetter(1, 0), reverse=True)
-                oids = dict(oids[:limit]).keys()
+                oids = dict(islice(oids, skip, skip+limit)).keys()
 
                 for obj in self.mdb[site].go_detail.find({'oid': {'$in': oids}}):
                     item = dict(zip(self.index_keys, itemgetter(*self.index_keys)(obj)))
