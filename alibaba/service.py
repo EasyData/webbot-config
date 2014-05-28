@@ -19,7 +19,7 @@ class WebAPI(object):
         self.mdb = pymongo.MongoClient(host='localhost')
 
         self.index_keys = ['mid', 'oid', 'url', 'title', 'cates', 'time']
-        self.detail_keys = self.index_keys+['addr', 'buyer', 'buy_list', 'req_list']
+        self.detail_keys = self.index_keys+['addr', 'buyer', 'buy_list', 'req_list', 'rfq_date', 'exp_date', 'rcv_date']
         self.contact_keys = ['mid', 'phone', 'mobile', 'contact', 'address']
         self.geo_keys = ['mid', 'longitude', 'latitude']
         self.sites = ['alibaba']
@@ -129,7 +129,7 @@ class WebAPI(object):
         try:
             if site not in self.sites:
                 raise Exception()
-            obj = self.mdb[site].contact.find_one({'mid':mid})
+            obj = self.mdb[site].corp_contact.find_one({'mid':mid})
             data = dict(zip(self.contact_keys, operator.itemgetter(*self.contact_keys)(obj)))
             data['site'] = site
             return self.ok(data)
@@ -149,7 +149,7 @@ class WebAPI(object):
         try:
             if site not in self.sites:
                 raise Exception()
-            obj = self.mdb[site].geo.find_one({'mid':mid})
+            obj = self.mdb[site].corp_geo.find_one({'mid':mid})
             data = dict(zip(self.geo_keys, operator.itemgetter(*self.geo_keys)(obj)))
             data['site'] = site
             return self.ok(data)
