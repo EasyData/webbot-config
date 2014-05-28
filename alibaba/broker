@@ -30,7 +30,7 @@ class RedisDBA(object):
         self.broker = broker
         log.msg('connect: %s'%rdb_uri)
         self.rdb = redis.StrictRedis.from_url(rdb_uri)
-        self.timeout = float('inf')
+        self.timeout = 3600
 
     def filter(self, item):
 

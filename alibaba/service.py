@@ -106,7 +106,7 @@ class WebAPI(object):
                         oids[oid] = epoch
 
                 oids = oids.items()
-                oids.sort(key=itemgetter(1), reverse=True)
+                oids.sort(key=itemgetter(1, 0), reverse=True)
                 oids = dict(oids[:limit]).keys()
 
                 for obj in self.mdb[site].go_detail.find({'oid': {'$in': oids}}):
