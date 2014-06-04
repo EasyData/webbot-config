@@ -18,10 +18,11 @@ try:
 except ImportError:
     import pickle
 
-#########################################
-# -------------- timeline ------------- #
-# all -> pending -> running -> finished #
-#########################################
+###############################################
+# ------------------ timeline --------------- #
+#   go: idx -> pending -> running -> finished #
+# corp: idx -> contact -> detail -> geo       #
+###############################################
 
 class RedisDBA(object):
 
