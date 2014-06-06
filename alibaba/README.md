@@ -1,4 +1,54 @@
-# 智慧商情/求购信息/接口文档
+智慧商情数据采集
+================
+
+描述
+----
+
+`通用爬虫`读取配置文件，采集阿里巴巴求购列表。  
+把数据发给`broker`，把id存入redis中, item存入mongo中。  
+`专用爬虫`/`通用爬虫`读取redis中的id，采集求购详情/公司详情。  
+`Web服务`开放HTTP数据接口，向外部提供数据检索服务。  
+
+代码
+----
+
+- 通用爬虫： <https://github.com/vimagick/webbot>
+- 专用爬虫： <https://github.com/vimagick/alibaba-go>
+- 配置文件/broker/Web服务： <https://github.com/vimagick/webbot-config/tree/master/alibaba>
+    - go-idx.conf       求购列表(配置文件)
+    - corp-idx.conf     公司黄页列表(配置文件)
+    - corp-contact.conf 公司联系信息(配置文件)
+    - corp-detail.conf  公司详细信息(配置文件)
+    - corp-geo.conf     公司地理坐标(配置文件)
+    - broker            接收爬虫数据, 入库相关(python脚本)
+    - service.py        提供Web服务(python脚本)
+
+----------------------------------------------------------------------------
+
+broker文档
+==========
+
+broker充当多个爬虫协同工作的桥梁.
+
+redis结构
+---------
+
+    KEY                             TYPE                    NOTE
+    ---                             ----                    ----
+    alibaba:go:idx                  set                     求购ID集合(用于求购ID去重)
+    alibaba:go:timeline             zset                    求购ID集合(按时间排序)
+    alibaba:go:pending              list                    求购ID列表(求购详情采集队列)
+    alibaba:go:finished             zset                    求购ID集合(按时间排序)
+    alibaba:go:cate:XXX             zset                    求购ID集合(按时间排序)
+    alibaba:corp:idx                set                     公司ID集合(用于公司ID去重)
+    alibaba:corp:contact:pending    list                    公司ID列表(联系信息采集队列)
+    alibaba:corp:detail:pending     list                    公司ID列表(详细信息采集队列)
+    alibaba:corp:geo:pending        list                    公司ID列表(地理信息采集队列)
+
+----------------------------------------------------------------------------
+
+service文档
+===========
 
 客户端调用服务器提供的Web接口:
 
